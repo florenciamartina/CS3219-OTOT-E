@@ -1,8 +1,10 @@
-import axios from "axios";
 import redis from "redis";
 import "dotenv/config";
+import nusmods from "./module-model.js";
+import mongoose from "mongoose";
 
 let redisClient;
+
 (async () => {
   redisClient = redis.createClient();
 
@@ -11,10 +13,20 @@ let redisClient;
   await redisClient.connect();
 })();
 
+let mongoDB = process.env.MONGO_DB_URI;
+
+mongoose.connect(mongoDB, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+let db = mongoose.connection;
+db.on("error", console.error.bind(console, "MongoDB connection error:"));
+db.once("open", () => console.log("Successfully connected to MongoDB"));
+
 export async function fetchModules(ay) {
-  const AZURE_URL = process.env.AZURE_URL;
-  const modules = await axios.get(`${AZURE_URL}&ay=${ay}`);
-  return modules.data;
+  const result = await nusmods.findOne({ ay: ay });
+  return result.modules;
 }
 
 export async function getModules(req, res) {
